@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="product_name" translatable="false">kakanote</string>
+    <string name="ui_image_filename">kakanote 图片</string>
+    <string name="ui_settings_filename">kakanote_设置.json</string>
+    <string name="ui_crash_backup_filename">kakanote 崩溃备份-%1$s.zip</string>
+    <string name="ui_empty_notes">暂无便签</string>
+    <string name="ui_color_preview">颜色预览</string>
+    <string name="ui_text_input">输入文本</string>
+    <string name="ui_change_note">更换便签</string>
+    <string name="ui_drag_item">拖动第 %1$d 项</string>
+    <string name="ui_delete_item">删除第 %1$d 项</string>
+    <string name="ui_edit_item">编辑第 %1$d 项</string>
+    <string name="ui_check_item">勾选第 %1$d 项</string>
+    <string name="ui_microsoft_account">微软账户</string>
+    <string name="ui_backup_filename">kakanote 备份 %1$s.zip</string>
+    <string name="ui_widget_sample_title">今天的待办清单</string>
+    <string name="ui_widget_sample_date">2026年10月20日 星期二</string>
+    <string name="ui_widget_sample_one">整理书桌</string>
+    <string name="ui_widget_sample_two">阅读一本书</string>
+    <string name="ui_widget_sample_three">购买生活用品</string>
+    <string name="ui_widget_sample_four">完成今日计划</string>
+    <string name="ui_widget_sample_five">散步半小时</string>
+    <string name="ui_widget_sample_six">记录今日收获</string>
+</resources>

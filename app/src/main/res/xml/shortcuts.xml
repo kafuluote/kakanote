@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:icon="@drawable/edit"
+        android:shortcutId="takeNote"
+        android:shortcutShortLabel="@string/take_note">
+
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="cool.hin.memox.presentation.activity.note.EditNoteActivity"
+            android:targetPackage="cool.hin.memox" />
+
+    </shortcut>
+
+</shortcuts>

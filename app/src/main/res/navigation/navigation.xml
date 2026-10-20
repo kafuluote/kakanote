@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:startDestination="@+id/Notes">
+
+    <fragment
+        android:id="@+id/Notes"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.NotesFragment"
+        android:label="@string/app_name">
+
+        <action
+            android:id="@+id/NotesToSearch"
+            app:destination="@id/Search"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/Labels"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.LabelsFragment"
+        android:label="@string/labels">
+
+        <action
+            android:id="@+id/LabelsToDisplayLabel"
+            app:destination="@id/DisplayLabel"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/Folders"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.FoldersFragment"
+        android:label="@string/folders">
+
+        <action
+            android:id="@+id/FoldersToDisplayFolder"
+            app:destination="@id/DisplayFolder"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/Deleted"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.DeletedFragment"
+      android:label="@string/deleted" >
+
+        <action
+          android:id="@+id/DeletedToSearch"
+          app:destination="@id/Search"
+          app:enterAnim="@anim/nav_default_enter_anim"
+          app:exitAnim="@anim/nav_default_exit_anim"
+          app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+          app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/Archive"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.ArchiveFragment"
+        android:label="@string/archived" >
+
+        <action
+          android:id="@+id/ArchiveToSearch"
+          app:destination="@id/Search"
+          app:enterAnim="@anim/nav_default_enter_anim"
+          app:exitAnim="@anim/nav_default_exit_anim"
+          app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+          app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+
+    <fragment
+      android:id="@+id/Reminders"
+      android:name="cool.hin.memox.presentation.activity.main.fragment.RemindersFragment"
+      android:label="@string/reminders">
+    </fragment>
+
+    <fragment
+        android:id="@+id/Settings"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:label="@string/settings">
+        <argument
+            android:name="category"
+            android:defaultValue="root"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SettingsAppearance"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:label="@string/appearance">
+        <argument
+            android:name="category"
+            android:defaultValue="appearance"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SettingsBackup"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:label="@string/backup">
+        <argument
+            android:name="category"
+            android:defaultValue="backup"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SettingsData"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:label="@string/data">
+        <argument
+            android:name="category"
+            android:defaultValue="data"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SettingsAbout"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:label="@string/about">
+        <argument
+            android:name="category"
+            android:defaultValue="about"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/Search"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.SearchFragment">
+        <argument
+          android:name="initialFolder"
+          app:argType="cool.hin.memox.data.model.Folder" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/DisplayLabel"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment"
+        android:label="{memox.intent.extra.DISPLAYED_LABEL}" />
+
+    <fragment
+        android:id="@+id/DisplayFolder"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.DisplayFolderFragment"
+        android:label="{memox.intent.extra.DISPLAYED_FOLDER}" />
+
+    <fragment
+        android:id="@+id/Unlabeled"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.UnlabeledFragment"
+        android:label="@string/unlabeled" />
+
+    <fragment android:id="@+id/PaperTodos" android:name="cool.hin.memox.presentation.activity.main.fragment.PaperTodosFragment" android:label="@string/paper_todos" />
+    <fragment android:id="@+id/PaperOrganize" android:name="cool.hin.memox.presentation.activity.main.fragment.PaperOrganizeFragment" android:label="@string/paper_organize" />
+</navigation>

@@ -1,0 +1,54 @@
+<resources>
+    <color name="paper_danger">#BA1A1A</color>
+    <color name="paper_danger_wash">#FCE7E7</color>
+    <string name="paper_library">分类与档案库</string>
+    <string name="paper_category_search">搜索分类名称或标签…</string>
+    <string name="paper_label_summary">共 %1$d 个标签 · %2$d 篇便签</string>
+    <string name="paper_folder_summary">共 %1$d 个文件夹 · %2$d 篇便签</string>
+    <string name="paper_custom_labels">自定义标签</string>
+    <string name="paper_custom_folders">自定义文件夹</string>
+    <string name="paper_reorder">自定义排序</string>
+    <string name="paper_reorder_done">完成排序</string>
+    <string name="paper_reorder_hint">按住右侧手柄拖动，可调整分类顺序</string>
+    <string name="paper_reorder_search_hint">清空搜索后可调整全部分类顺序</string>
+    <string name="paper_category_hidden">已在首页隐藏</string>
+    <string name="paper_category_label_hint">多标签归类 · 随时整理</string>
+    <string name="paper_category_folder_hint">便签文件夹 · 有序收藏</string>
+    <string name="paper_category_count">%1$d 篇</string>
+    <string name="paper_category_actions">%1$s · 分类操作</string>
+    <string name="paper_category_drag">拖动 %1$s 排序</string>
+    <string name="paper_category_no_match">没有找到匹配的分类</string>
+    <string name="paper_category_hide">在首页隐藏</string>
+    <string name="paper_category_show">在首页显示</string>
+    <string name="paper_category_delete_message">删除分类后，关联便签仍会保留。</string>
+    <string name="paper_category_local">本地管理</string>
+    <string name="paper_trash">废纸篓</string>
+    <string name="paper_trash_policy">便签移入废纸篓 %1$d 天后将自动清理。永久删除后，数据无法恢复。</string>
+    <string name="paper_trash_policy_off">当前未开启自动清理。永久删除后，数据无法恢复。</string>
+    <string name="paper_trash_count">当前共 %1$d 篇已删除便签</string>
+    <string name="paper_trash_clear">全部清空</string>
+    <string name="paper_trash_selected">全选（已选 %1$d/%2$d）</string>
+    <string name="paper_trash_sort_new">最近删除优先</string>
+    <string name="paper_trash_sort_old">较早删除优先</string>
+    <string name="paper_trash_age">删除/更新于 %1$d 天前</string>
+    <string name="paper_trash_remaining">还剩 %1$d 天</string>
+    <string name="paper_trash_due">等待自动清理</string>
+    <string name="paper_trash_manual">手动清理</string>
+    <string name="paper_trash_restore">恢复便签（%1$d）</string>
+    <string name="paper_trash_delete">彻底删除（%1$d）</string>
+    <string name="paper_trash_empty">废纸篓是空的</string>
+    <string name="paper_trash_empty_hint">删除的便签会暂存在这里，可随时恢复。</string>
+    <string name="paper_trash_select_note">选择 %1$s</string>
+    <string name="paper_trash_restore_note">恢复 %1$s</string>
+    <string name="paper_trash_delete_note">彻底删除 %1$s</string>
+    <item type="id" name="CategoriesSearch" />
+    <item type="id" name="CategorySort" />
+    <item type="id" name="CategoryAdd" />
+    <item type="id" name="CategoryList" />
+    <item type="id" name="TrashList" />
+    <item type="id" name="TrashSelectAll" />
+    <item type="id" name="TrashRestoreSelection" />
+    <item type="id" name="TrashDeleteSelection" />
+    <item type="id" name="TrashClear" />
+    <item type="id" name="TrashSort" />
+</resources>

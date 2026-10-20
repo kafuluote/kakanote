@@ -1,0 +1,22 @@
+server:
+  address: ":8080"
+  readTimeout: "10s"
+  writeTimeout: "10s"
+  idleTimeout: "60s"
+  dumpRouterMap: false
+
+update:
+  release:
+    version: "1.2.63"
+    # 与 Android 的 app.versionCode 保持一致，每次发布递增。
+    versionCode: 12063
+    changelog: |
+      更新说明：
+      - 修复：笔记状态同步问题
+    releaseUrl: "https://cnb.cool/hin/memoX/-/releases"
+    # 可选：APK 直链。未配置时客户端打开 releaseUrl。
+    downloadUrl: ""
+  policy:
+    # 版本格式：第一段.大版本.小版本。第一段提升也归为大版本更新。
+    forceMajor: true
+    forceMinor: false

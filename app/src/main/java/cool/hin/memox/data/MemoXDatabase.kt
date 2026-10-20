@@ -1,0 +1,433 @@
+package cool.hin.memox.data
+
+import android.content.Context
+import android.content.ContextWrapper
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.lifecycle.Observer
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.sqlite.db.SupportSQLiteDatabase
+import cool.hin.memox.MemoXApplication.Companion.isTestRunner
+import cool.hin.memox.data.dao.BaseNoteDao
+import cool.hin.memox.data.dao.CommonDao
+import cool.hin.memox.data.dao.FolderDao
+import cool.hin.memox.data.dao.LabelDao
+import cool.hin.memox.data.model.BaseNote
+import cool.hin.memox.data.model.Color
+import cool.hin.memox.data.model.Converters
+import cool.hin.memox.data.model.Label
+import cool.hin.memox.data.model.NoteFolder
+import cool.hin.memox.data.model.toColorString
+import cool.hin.memox.presentation.view.misc.NotNullLiveData
+import cool.hin.memox.presentation.viewmodel.preference.BiometricLock
+import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
+import cool.hin.memox.presentation.viewmodel.preference.observeForeverSkipFirst
+import cool.hin.memox.utils.getExternalMediaDirectory
+import cool.hin.memox.utils.security.SQLCipherUtils
+import cool.hin.memox.utils.security.getInitializedCipherForDecryption
+import java.io.File
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+
+@TypeConverters(Converters::class)
+@Database(entities = [BaseNote::class, Label::class, NoteFolder::class], version = 17)
+abstract class MemoXDatabase : RoomDatabase() {
+
+    abstract fun getLabelDao(): LabelDao
+
+    abstract fun getFolderDao(): FolderDao
+
+    abstract fun getCommonDao(): CommonDao
+
+    abstract fun getBaseNoteDao(): BaseNoteDao
+
+    fun checkpoint() {
+        getBaseNoteDao().query(SimpleSQLiteQuery("pragma wal_checkpoint(FULL)"))
+    }
+
+    fun ping() = getBaseNoteDao().query(SimpleSQLiteQuery("SELECT 1")) == 1
+
+    private var biometricLockObserver: Observer<BiometricLock>? = null
+    private var dataInPublicFolderObserver: Observer<Boolean>? = null
+
+    companion object {
+
+        const val DATABASE_NAME = "MemoXDatabase"
+
+        @Volatile private var instance: NotNullLiveData<MemoXDatabase>? = null
+
+        fun getCurrentDatabaseFile(context: ContextWrapper): File {
+            return if (MemoXPreferences.getInstance(context).dataInPublicFolder.value) {
+                getExternalDatabaseFile(context)
+            } else {
+                getInternalDatabaseFile(context)
+            }
+        }
+
+        fun getExternalDatabaseFile(context: ContextWrapper): File {
+            return File(context.getExternalMediaDirectory(), DATABASE_NAME)
+        }
+
+        fun getExternalDatabaseFiles(context: ContextWrapper): List<File> {
+            return listOf(
+                File(context.getExternalMediaDirectory(), DATABASE_NAME),
+                File(context.getExternalMediaDirectory(), "$DATABASE_NAME-shm"),
+                File(context.getExternalMediaDirectory(), "$DATABASE_NAME-wal"),
+            )
+        }
+
+        fun getInternalDatabaseFile(context: Context): File {
+            return context.getDatabasePath(DATABASE_NAME)
+        }
+
+        fun getInternalDatabaseFiles(context: ContextWrapper): List<File> {
+            val directory = context.getDatabasePath(DATABASE_NAME).parentFile
+            return listOf(
+                File(directory, DATABASE_NAME),
+                File(directory, "$DATABASE_NAME-shm"),
+                File(directory, "$DATABASE_NAME-wal"),
+            )
+        }
+
+        private fun getCurrentDatabaseName(
+            context: ContextWrapper,
+            dataInPublicFolder: Boolean,
+        ): String {
+            return if (dataInPublicFolder) {
+                getExternalDatabaseFile(context).absolutePath
+            } else {
+                DATABASE_NAME
+            }
+        }
+
+        fun getDatabase(
+            context: ContextWrapper,
+            observePreferences: Boolean = true,
+        ): NotNullLiveData<MemoXDatabase> {
+            return instance
+                ?: synchronized(this) {
+                    val preferences = MemoXPreferences.getInstance(context)
+                    this.instance =
+                        NotNullLiveData(createInstance(context, preferences, observePreferences))
+                    return this.instance!!
+                }
+        }
+
+        private var testInstance: MemoXDatabase? = null
+
+        private fun getTestDatabase(context: ContextWrapper): MemoXDatabase {
+            return testInstance
+                ?: synchronized(this) {
+                    testInstance =
+                        Room.inMemoryDatabaseBuilder(context, MemoXDatabase::class.java)
+                            .allowMainThreadQueries()
+                            .build()
+                    return testInstance!!
+                }
+        }
+
+        fun getFreshDatabase(context: ContextWrapper, dataInPublic: Boolean): MemoXDatabase {
+            return if (isTestRunner()) {
+                getTestDatabase(context)
+            } else {
+                createInstance(
+                    context,
+                    MemoXPreferences.getInstance(context),
+                    false,
+                    dataInPublic = dataInPublic,
+                )
+            }
+        }
+
+        private fun createInstance(
+            context: ContextWrapper,
+            preferences: MemoXPreferences,
+            observePreferences: Boolean,
+            dataInPublic: Boolean = preferences.dataInPublicFolder.value,
+        ): MemoXDatabase {
+            val instanceBuilder =
+                Room.databaseBuilder(
+                        context,
+                        MemoXDatabase::class.java,
+                        getCurrentDatabaseName(context, dataInPublic),
+                    )
+                    .addMigrations(
+                        Migration2,
+                        Migration3,
+                        Migration4,
+                        Migration5,
+                        Migration6,
+                        Migration7,
+                        Migration8,
+                        Migration9,
+                        Migration10,
+                        Migration11,
+                        Migration12,
+                        Migration13,
+                        Migration14,
+                        Migration15,
+                        Migration16,
+                        Migration17,
+                    )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                System.loadLibrary("sqlcipher")
+                if (preferences.isLockEnabled) {
+                    if (
+                        SQLCipherUtils.getDatabaseState(getCurrentDatabaseFile(context)) ==
+                            SQLCipherUtils.State.ENCRYPTED
+                    ) {
+                        initializeDecryption(preferences, instanceBuilder)
+                    } else {
+                        preferences.biometricLock.save(BiometricLock.DISABLED)
+                    }
+                } else {
+                    if (
+                        SQLCipherUtils.getDatabaseState(getCurrentDatabaseFile(context)) ==
+                            SQLCipherUtils.State.ENCRYPTED
+                    ) {
+                        preferences.biometricLock.save(BiometricLock.ENABLED)
+                        initializeDecryption(preferences, instanceBuilder)
+                    }
+                }
+                val instance = instanceBuilder.build()
+                if (observePreferences) {
+                    instance.biometricLockObserver = Observer {
+                        MemoXDatabase.instance?.value?.biometricLockObserver?.let {
+                            preferences.biometricLock.removeObserver(it)
+                        }
+                        val newInstance = createInstance(context, preferences, true)
+                        MemoXDatabase.instance?.postValue(newInstance)
+                        preferences.biometricLock.observeForeverSkipFirst(
+                            newInstance.biometricLockObserver!!
+                        )
+                    }
+                    preferences.biometricLock.observeForeverSkipFirst(
+                        instance.biometricLockObserver!!
+                    )
+
+                    instance.dataInPublicFolderObserver = Observer {
+                        MemoXDatabase.instance?.value?.dataInPublicFolderObserver?.let {
+                            preferences.dataInPublicFolder.removeObserver(it)
+                        }
+                        val newInstance = createInstance(context, preferences, true)
+                        MemoXDatabase.instance?.postValue(newInstance)
+                        preferences.dataInPublicFolder.observeForeverSkipFirst(
+                            newInstance.dataInPublicFolderObserver!!
+                        )
+                    }
+                    preferences.dataInPublicFolder.observeForeverSkipFirst(
+                        instance.dataInPublicFolderObserver!!
+                    )
+                }
+                return instance
+            }
+            return instanceBuilder.build()
+        }
+
+        @RequiresApi(Build.VERSION_CODES.M)
+        private fun initializeDecryption(
+            preferences: MemoXPreferences,
+            instanceBuilder: Builder<MemoXDatabase>,
+        ) {
+            val initializationVector = preferences.iv.value!!
+            val cipher = getInitializedCipherForDecryption(iv = initializationVector)
+            val encryptedPassphrase = preferences.databaseEncryptionKey.value
+            val passphrase = cipher.doFinal(encryptedPassphrase)
+            val factory = SupportOpenHelperFactory(passphrase)
+            instanceBuilder.openHelperFactory(factory)
+        }
+
+        object Migration2 : Migration(1, 2) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `color` TEXT NOT NULL DEFAULT 'DEFAULT'"
+                )
+            }
+        }
+
+        object Migration3 : Migration(2, 3) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `images` TEXT NOT NULL DEFAULT `[]`")
+            }
+        }
+
+        object Migration4 : Migration(3, 4) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `audios` TEXT NOT NULL DEFAULT `[]`")
+            }
+        }
+
+        object Migration5 : Migration(4, 5) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `files` TEXT NOT NULL DEFAULT `[]`")
+            }
+        }
+
+        object Migration6 : Migration(5, 6) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `modifiedTimestamp` INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
+
+        object Migration7 : Migration(6, 7) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `reminders` TEXT NOT NULL DEFAULT `[]`"
+                )
+            }
+        }
+
+        object Migration8 : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val cursor = db.query("SELECT id, color FROM BaseNote")
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
+                    val colorString = cursor.getString(cursor.getColumnIndexOrThrow("color"))
+                    val color = Color.valueOfOrDefault(colorString)
+                    val hexColor = color.toColorString()
+                    db.execSQL("UPDATE BaseNote SET color = ? WHERE id = ?", arrayOf(hexColor, id))
+                }
+                cursor.close()
+            }
+        }
+
+        object Migration9 : Migration(8, 9) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `viewMode` TEXT NOT NULL DEFAULT 'EDIT'"
+                )
+            }
+        }
+
+        object Migration10 : Migration(9, 10) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `isPinnedToStatus` INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
+
+        object Migration11 : Migration(10, 11) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `Label` ADD COLUMN `order` INTEGER NOT NULL DEFAULT 0")
+                val cursor = db.query("SELECT value FROM Label ORDER BY value DESC")
+                var order = 0
+                while (cursor.moveToNext()) {
+                    val value = cursor.getString(0)
+                    db.execSQL(
+                        "UPDATE Label SET `order` = ? WHERE value = ?",
+                        arrayOf(order, value),
+                    )
+                    order++
+                }
+                cursor.close()
+            }
+        }
+
+        object Migration12 : Migration(11, 12) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `locked` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        object Migration13 : Migration(12, 13) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // The "Archive" folder feature was removed. Move any archived notes back into the
+                // regular Notes folder so they stay reachable.
+                db.execSQL("UPDATE `BaseNote` SET `folder` = 'NOTES' WHERE `folder` = 'ARCHIVED'")
+            }
+        }
+
+        object Migration14 : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // The v6 migration used DEFAULT 'timestamp' which SQLite coerces to 0, so every
+                // note migrated from v1-v5 ended up with modifiedTimestamp = 0 (1970). Backfill
+                // those rows using their creation time as the best available "last modified" proxy.
+                db.execSQL(
+                    "UPDATE `BaseNote` SET `modifiedTimestamp` = `timestamp` WHERE `modifiedTimestamp` = 0"
+                )
+            }
+        }
+
+        object Migration15 : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // The editor's edit/read-only view mode was removed; drop the now-unused column.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `BaseNote_new` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`type` TEXT NOT NULL, `folder` TEXT NOT NULL, `color` TEXT NOT NULL, " +
+                        "`title` TEXT NOT NULL, `pinned` INTEGER NOT NULL, " +
+                        "`timestamp` INTEGER NOT NULL, `modifiedTimestamp` INTEGER NOT NULL, " +
+                        "`labels` TEXT NOT NULL, `body` TEXT NOT NULL, `spans` TEXT NOT NULL, " +
+                        "`items` TEXT NOT NULL, `images` TEXT NOT NULL, `files` TEXT NOT NULL, " +
+                        "`audios` TEXT NOT NULL, `reminders` TEXT NOT NULL, " +
+                        "`isPinnedToStatus` INTEGER NOT NULL, `locked` INTEGER NOT NULL)"
+                )
+                db.execSQL(
+                    "INSERT INTO `BaseNote_new` (" +
+                        "`id`, `type`, `folder`, `color`, `title`, `pinned`, `timestamp`, " +
+                        "`modifiedTimestamp`, `labels`, `body`, `spans`, `items`, `images`, " +
+                        "`files`, `audios`, `reminders`, `isPinnedToStatus`, `locked`) " +
+                        "SELECT `id`, `type`, `folder`, `color`, `title`, `pinned`, `timestamp`, " +
+                        "`modifiedTimestamp`, `labels`, `body`, `spans`, `items`, `images`, " +
+                        "`files`, `audios`, `reminders`, `isPinnedToStatus`, `locked` " +
+                        "FROM `BaseNote`"
+                )
+                db.execSQL("DROP TABLE `BaseNote`")
+                db.execSQL("ALTER TABLE `BaseNote_new` RENAME TO `BaseNote`")
+                // The original table carried an index; recreating the table dropped it. Without
+                // this, Room's post-migration schema validation fails and the app crashes on
+                // upgrade.
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_BaseNote_id_folder_pinned_timestamp_labels` " +
+                        "ON `BaseNote` (`id`, `folder`, `pinned`, `timestamp`, `labels`)"
+                )
+            }
+        }
+
+        object Migration16 : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Repair databases left at v15 by the broken v15 migration (missing index).
+                // Idempotent: no-op if the index already exists.
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_BaseNote_id_folder_pinned_timestamp_labels` " +
+                        "ON `BaseNote` (`id`, `folder`, `pinned`, `timestamp`, `labels`)"
+                )
+            }
+        }
+
+        object Migration17 : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add the user-folder association to every note (logical only, never a physical
+                // directory on disk or in the WebDAV/OneDrive layout). Defaults to "" = no folder.
+                db.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `folderId` TEXT NOT NULL DEFAULT ''"
+                )
+                // Create the user-defined folder catalog table.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `NoteFolder` (" +
+                        "`name` TEXT NOT NULL, `order` INTEGER NOT NULL, PRIMARY KEY(`name`))"
+                )
+                // `order` is a SQLite reserved word; it must be quoted, mirroring how the Label
+                // table (which also has an `order` column) is created.
+            }
+        }
+    }
+}

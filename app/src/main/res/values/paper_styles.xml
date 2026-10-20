@@ -1,0 +1,28 @@
+<resources>
+    <style name="PaperCircle">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    <style name="PaperNavItem" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">64dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:drawablePadding">3dp</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">@color/paper_muted</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+    <style name="PaperCard" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">20dp</item>
+        <item name="cardBackgroundColor">@color/paper_card</item>
+        <item name="cardElevation">1dp</item>
+        <item name="strokeColor">@color/paper_line</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+</resources>

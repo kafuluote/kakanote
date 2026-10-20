@@ -1,0 +1,9 @@
+<resources>
+    <color name="paper_canvas">#14191F</color>
+    <color name="paper_card">#20272F</color>
+    <color name="paper_ink">#EEF1F8</color>
+    <color name="paper_muted">#ACB5C2</color>
+    <color name="paper_accent_ink">#FFB877</color>
+    <color name="paper_wash">#2D3540</color>
+    <color name="paper_line">#343C46</color>
+</resources>
